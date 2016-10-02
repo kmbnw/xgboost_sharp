@@ -1,11 +1,11 @@
 CC=g++
 CFLAGS=-g -Wall
 
-INCDIR=/opt/include
-INC_PARAMS=$(INCDIR:%=-I%)
+# Assumes xgboost and rabit libraries are installed
+# directly to /usr/local/lib or another path specified
+# by /etc/ld.so.conf.d/something*
+# Similarly for the include directory
 
-LIBDIR=/opt/lib/xgboost /opt/lib/rabit
-LIB_PARAMS=$(LIBDIR:%=-L%)
 LIBS=-lxgboost
 
 TARGET=xgboost_sharp
@@ -13,8 +13,7 @@ TARGET=xgboost_sharp
 all: $(TARGET)
 
 $(TARGET): $(TARGET).cpp
-#	$(CC) $(CFLAGS) -o $(TARGET).o $(LIB) $(INC) $(TARGET).cpp
-	$(CC) $(CFLAGS) -o $(TARGET).o $(LIB_PARAMS) $(INC_PARAMS) $(TARGET).cpp $(LIBS)
+	$(CC) $(CFLAGS) -o $(TARGET)  $(TARGET).cpp $(LIBS)
 
 clean:
 	$(RM) $(TARGET)
