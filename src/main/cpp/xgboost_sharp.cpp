@@ -26,7 +26,7 @@
 
 class XGBoostWrapper {
     public:
-        XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params);
+        XGBoostWrapper(size_t num_trees, std::map<std::string, std::string> booster_params);
         ~XGBoostWrapper();
         // xgboost expects a flat array
         void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
@@ -34,12 +34,12 @@ class XGBoostWrapper {
     private:
         BoosterHandle _h_booster;
         // number of boosting rounds
-        unsigned int _num_trees;
+        size_t _num_trees;
         std::map<std::string, std::string> _booster_params;
 };
 
 // Create an XGBoost handle
-XGBoostWrapper::XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params) {
+XGBoostWrapper::XGBoostWrapper(size_t num_trees, std::map<std::string, std::string> booster_params) {
     _h_booster = new BoosterHandle();
     _num_trees = num_trees;
     _booster_params = booster_params;
