@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <map>
 #include "rabit/c_api.h"
 #include "xgboost/c_api.h"
 
@@ -25,24 +26,29 @@
 
 class XGBoostWrapper {
     public:
-        XGBoostWrapper();
+        XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params);
         ~XGBoostWrapper();
         // xgboost expects a flat array
         void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
         void predict(const float Xs[], const float** YHats, unsigned int rows, unsigned int cols);
     private:
-        BoosterHandle m_booster;
+        BoosterHandle _h_booster;
+        // number of boosting rounds
+        unsigned int _num_trees;
+        std::map<std::string, std::string> _booster_params;
 };
 
 // Create an XGBoost handle
-XGBoostWrapper::XGBoostWrapper() {
-    m_booster = new BoosterHandle();
+XGBoostWrapper::XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params) {
+    _h_booster = new BoosterHandle();
+    _num_trees = num_trees;
+    _booster_params = booster_params;
 }
 
 // Delete the XGBoost handle
 XGBoostWrapper::~XGBoostWrapper() {
-    if (m_booster) {
-        XGBoosterFree(m_booster);
+    if (_h_booster) {
+        XGBoosterFree(_h_booster);
     }
 }
 
@@ -63,19 +69,17 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
     */
 
     // create the booster and load some parameters
-    XGBoosterCreate(h_train, 1, &m_booster);
-    XGBoosterSetParam(m_booster, "booster", "gbtree");
-    XGBoosterSetParam(m_booster, "objective", "reg:linear");
-    XGBoosterSetParam(m_booster, "max_depth", "5");
-    XGBoosterSetParam(m_booster, "eta", "0.1");
-    XGBoosterSetParam(m_booster, "min_child_weight", "1");
-    XGBoosterSetParam(m_booster, "subsample", "0.5");
-    XGBoosterSetParam(m_booster, "colsample_bytree", "1");
-    XGBoosterSetParam(m_booster, "num_parallel_tree", "1");
+    XGBoosterCreate(h_train, 1, &_h_booster);
+
+    std::map<std::string, std::string>::iterator it;
+    for (it = _booster_params.begin(); it != _booster_params.end(); ++it) {
+        std::cout << it->first << ", " << it->second << '\n';
+        XGBoosterSetParam(_h_booster, it->first.c_str(), it->second.c_str());
+    }
 
     // perform 200 learning iterations
-    for (unsigned int iter=0; iter<200; iter++) {
-        XGBoosterUpdateOneIter(m_booster, iter, h_train[0]);
+    for (unsigned int iter = 0; iter < _num_trees; iter++) {
+        XGBoosterUpdateOneIter(_h_booster, iter, h_train[0]);
     }
 
     // free xgboost internal structures
@@ -86,7 +90,7 @@ void XGBoostWrapper::predict(const float Xs[], const float** Yhats, unsigned int
     DMatrixHandle h_test;
     XGDMatrixCreateFromMat((float *) Xs, rows, cols, -1, &h_test);
     bst_ulong out_len;
-    XGBoosterPredict(m_booster, h_test, 0, 0, &out_len, Yhats);
+    XGBoosterPredict(_h_booster, h_test, 0, 0, &out_len, Yhats);
 
     // free xgboost internal structures
     XGDMatrixFree(h_test);
@@ -112,7 +116,17 @@ int main() {
         Ys[i] = 1 + i * i * i;
     }
 
-    XGBoostWrapper fitter;
+    std::map<std::string, std::string> booster_params;
+    booster_params["booster"] = "gbtree";
+    booster_params["objective"] = "reg:linear";
+    booster_params["max_depth"] = "5";
+    booster_params["eta"] = "0.1";
+    booster_params["min_child_weight"] = "1";
+    booster_params["subsample"] = "0.5";
+    booster_params["colsample_bytree"] = "1";
+    booster_params["num_parallel_tree"] = "1";
+
+    XGBoostWrapper fitter(200, booster_params);
     fitter.fit(Xs, Ys, rows, cols);
 
     const unsigned int sample_rows = 5;
