@@ -77,7 +77,6 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
         XGBoosterSetParam(_h_booster, it->first.c_str(), it->second.c_str());
     }
 
-    // perform 200 learning iterations
     for (unsigned int iter = 0; iter < _num_trees; iter++) {
         XGBoosterUpdateOneIter(_h_booster, iter, h_train[0]);
     }
@@ -97,7 +96,6 @@ void XGBoostWrapper::predict(const float Xs[], const float** Yhats, unsigned int
 }
 
 int main() {
-    // create the train data
     const unsigned int cols = 3;
     const unsigned int rows = 5;
 
