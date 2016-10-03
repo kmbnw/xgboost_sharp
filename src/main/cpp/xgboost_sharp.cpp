@@ -99,6 +99,10 @@ void XGBoostWrapper::predict(const float Xs[], const float** Yhats, unsigned int
     bst_ulong out_len;
     XGBoosterPredict(_h_booster, h_test, 0, 0, &out_len, Yhats);
 
+    for (unsigned int i = 0;i < rows; i++) {
+        std::cout << "prediction[" << i << "]=" << (*Yhats)[i] << std::endl;
+    }
+
     // free xgboost internal structures
     XGDMatrixFree(h_test);
 }

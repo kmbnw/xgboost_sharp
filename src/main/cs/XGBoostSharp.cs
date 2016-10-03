@@ -33,10 +33,45 @@ public static class XGBoostAPI {
     public static void Main(string[] args)
     {
         IntPtr booster = IntPtr.Zero;
+
+        const uint cols = 3;
+        const uint rows = 5;
+
+        float[] Xs = new float[rows * cols];
+        for(uint i = 0; i < rows; ++i)
+        {
+            for(uint j = 0; j < cols; ++j)
+            {
+                Xs[i * cols + j] = (i + 1) * (j + 1);
+            }
+        }
+
+        float[] Ys = new float[rows];
+
+        for (uint i = 0; i < rows; i++) {
+            Ys[i] = 1 + i * i * i;
+        }
+
+        const uint sample_rows = 5;
+        float[] test = new float[sample_rows * cols];
+        for (uint i = 0;i < sample_rows; i++) {
+            for (uint j = 0; j < cols; j++) {
+                test[i * cols + j] = (i + 1) * (j + 1);
+            }
+        }
+
+        float[] Yhats = new float[sample_rows];
+
         
         try 
         {
             booster = CreateBooster(200);
+            Fit(booster, Xs, Ys, rows, cols);
+            Predict(booster, test, Yhats, sample_rows, cols);
+
+            for (uint i = 0;i < sample_rows; i++) {
+                Console.WriteLine("prediction[" + i + "]=" + Yhats[i]);
+            }
         }
         finally
         {
