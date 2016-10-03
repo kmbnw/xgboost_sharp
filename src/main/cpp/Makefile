@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g -Wall
+CFLAGS=-g -Wall -shared -fPIC
 
 # Assumes xgboost and rabit libraries are installed
 # directly to /usr/local/lib or another path specified
@@ -8,12 +8,13 @@ CFLAGS=-g -Wall
 
 LIBS=-lxgboost
 
-TARGET=xgboost_sharp
+SRC=xgboost_sharp
+TARGET=libxgboost_sharp
 
-all: $(TARGET)
+all: $(TARGET).so
 
-$(TARGET): $(TARGET).cpp
-	$(CC) $(CFLAGS) -o $(TARGET)  $(TARGET).cpp $(LIBS)
+$(TARGET).so: $(SRC).cpp
+	$(CC) $(CFLAGS) -o $(TARGET).so $(SRC).cpp $(LIBS)
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET).so

@@ -26,20 +26,20 @@
 
 class XGBoostWrapper {
     public:
-        XGBoostWrapper(size_t num_trees, std::map<std::string, std::string> booster_params);
+        XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params);
         ~XGBoostWrapper();
         // xgboost expects a flat array
         void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
-        void predict(const float Xs[], const float** YHats, unsigned int rows, unsigned int cols);
+        void predict(const float Xs[], const float** Yhats, unsigned int rows, unsigned int cols);
     private:
         BoosterHandle _h_booster;
         // number of boosting rounds
-        size_t _num_trees;
+        unsigned int _num_trees;
         std::map<std::string, std::string> _booster_params;
 };
 
 // Create an XGBoost handle
-XGBoostWrapper::XGBoostWrapper(size_t num_trees, std::map<std::string, std::string> booster_params) {
+XGBoostWrapper::XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params) {
     _h_booster = new BoosterHandle();
     _num_trees = num_trees;
     _booster_params = booster_params;
@@ -145,4 +145,36 @@ int main() {
     free((void *)Yhats);
 
     return 0;
+}
+
+extern "C" {
+    XGBoostWrapper* CreateBooster(
+            unsigned int num_trees,
+            std::map<std::string, std::string> booster_params) {
+        return new XGBoostWrapper(num_trees, booster_params);
+    }
+
+    void DeleteBooster(XGBoostWrapper* pBooster) {
+        if (pBooster) {
+            delete pBooster;
+        }
+    }
+
+    void Fit(
+            XGBoostWrapper* pBooster,
+            const float Xs[],
+            const float Ys[],
+            unsigned int rows,
+            unsigned int cols) {
+        return pBooster->fit(Xs, Ys, rows, cols);
+    }
+
+    void Predict(
+          XGBoostWrapper* pBooster,
+          const float Xs[],
+          const float** Yhats,
+          unsigned int rows,
+          unsigned int cols) {
+      return pBooster->predict(Xs, Yhats, rows, cols);
+    }
 }
