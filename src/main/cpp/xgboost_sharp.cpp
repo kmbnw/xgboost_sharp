@@ -30,7 +30,7 @@ class XGBoostWrapper {
         ~XGBoostWrapper();
         // xgboost expects a flat array
         void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
-        void predict(const float Xs[], const float** Yhats, unsigned int rows, unsigned int cols);
+        void predict(const float Xs[], float* Yhats, unsigned int rows, unsigned int cols);
     private:
         BoosterHandle _h_booster;
         // number of boosting rounds
@@ -93,60 +93,23 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
     XGDMatrixFree(h_train[0]);
 }
 
-void XGBoostWrapper::predict(const float Xs[], const float** Yhats, unsigned int rows, unsigned int cols) {
+void XGBoostWrapper::predict(const float Xs[], float* Yhats, unsigned int rows, unsigned int cols) {
     DMatrixHandle h_test;
     XGDMatrixCreateFromMat((float *) Xs, rows, cols, -1, &h_test);
     bst_ulong out_len;
-    XGBoosterPredict(_h_booster, h_test, 0, 0, &out_len, Yhats);
+    const float* f;
+    XGBoosterPredict(_h_booster, h_test, 0, 0, &out_len, &f);
 
     for (unsigned int i = 0;i < rows; i++) {
-        std::cout << "prediction[" << i << "]=" << (*Yhats)[i] << std::endl;
+        Yhats[i] = f[i];
+        std::cout << "prediction[" << i << "]=" << Yhats[i] << std::endl;
     }
 
     // free xgboost internal structures
     XGDMatrixFree(h_test);
-}
-
-int main() {
-    const unsigned int cols = 3;
-    const unsigned int rows = 5;
-
-    float Xs[rows * cols];
-    for(unsigned int i = 0; i < rows; ++i)
-    {
-        for(unsigned int j = 0; j < cols; ++j)
-        {
-            Xs[i * cols + j] = (i + 1) * (j + 1);
-        }
-    }
-
-    float Ys[rows];
-
-    for (unsigned int i = 0; i < rows; i++) {
-        Ys[i] = 1 + i * i * i;
-    }
-
-    XGBoostWrapper fitter(200);
-    fitter.fit(Xs, Ys, rows, cols);
-
-    const unsigned int sample_rows = 5;
-    float test[sample_rows * cols];
-    for (unsigned int i = 0;i < sample_rows; i++) {
-        for (unsigned int j = 0;j < cols; j++) {
-            test[i * cols + j] = (i + 1) * (j + 1);
-        }
-    }
-
-    const float* Yhats; //[sample_rows];
-    fitter.predict(test, &Yhats, sample_rows, cols);
-
-    for (unsigned int i = 0;i < sample_rows; i++) {
-        std::cout << "prediction[" << i << "]=" << Yhats[i] << std::endl;
-    }
-
-    free((void *)Yhats);
-
-    return 0;
+    // TODO seems as though the pointer set by XGBoosterPredict gets
+    // freed during XGDMatrixFree.  Is that the case?  If not, do
+    // we need to free() it?
 }
 
 extern "C" {
@@ -172,7 +135,7 @@ extern "C" {
     void Predict(
           XGBoostWrapper* pBooster,
           const float Xs[],
-          const float** Yhats,
+          float* Yhats,
           unsigned int rows,
           unsigned int cols) {
       return pBooster->predict(Xs, Yhats, rows, cols);

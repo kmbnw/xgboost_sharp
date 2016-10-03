@@ -48,14 +48,17 @@ public static class XGBoostAPI {
 
         float[] Ys = new float[rows];
 
-        for (uint i = 0; i < rows; i++) {
+        for (uint i = 0; i < rows; i++) 
+        {
             Ys[i] = 1 + i * i * i;
         }
 
         const int sample_rows = 5;
         float[] test = new float[sample_rows * cols];
-        for (int i = 0;i < sample_rows; i++) {
-            for (uint j = 0; j < cols; j++) {
+        for (int i = 0;i < sample_rows; i++) 
+        {
+            for (uint j = 0; j < cols; j++) 
+            {
                 test[i * cols + j] = (i + 1) * (j + 1);
             }
         }
@@ -64,7 +67,6 @@ public static class XGBoostAPI {
         
         try 
         {
-            
             booster = CreateBooster(200);
             Fit(booster, Xs, Ys, rows, cols);
 
@@ -82,6 +84,5 @@ public static class XGBoostAPI {
         {
             DeleteBooster(booster);
         }
-        Console.WriteLine(booster);
     }
 }
