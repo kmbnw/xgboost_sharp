@@ -10,9 +10,7 @@ public static class XGBoostAPI {
 
     [DllImport("libxgboost_sharp.so", CharSet = CharSet.Auto)]
     [return: MarshalAs(UnmanagedType.I1)]
-    private static extern IntPtr CreateBooster(
-        uint numTrees,
-        Dictionary<string, string> boosterParams);
+    private static extern IntPtr CreateBooster(uint numTrees);
 
     [DllImport("libxgboost_sharp.so", CharSet = CharSet.Auto)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -38,12 +36,12 @@ public static class XGBoostAPI {
         
         try 
         {
-            booster = CreateBooster(200, new Dictionary<string, string>());
+            booster = CreateBooster(200);
         }
         finally
         {
             DeleteBooster(booster);
         }
-        Console.WriteLine("x");
+        Console.WriteLine(booster);
     }
 }

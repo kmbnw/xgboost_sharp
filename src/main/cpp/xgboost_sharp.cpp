@@ -26,7 +26,7 @@
 
 class XGBoostWrapper {
     public:
-        XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params);
+        XGBoostWrapper(unsigned int num_trees);
         ~XGBoostWrapper();
         // xgboost expects a flat array
         void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
@@ -35,14 +35,12 @@ class XGBoostWrapper {
         BoosterHandle _h_booster;
         // number of boosting rounds
         unsigned int _num_trees;
-        std::map<std::string, std::string> _booster_params;
 };
 
 // Create an XGBoost handle
-XGBoostWrapper::XGBoostWrapper(unsigned int num_trees, std::map<std::string, std::string> booster_params) {
+XGBoostWrapper::XGBoostWrapper(unsigned int num_trees) {
     _h_booster = new BoosterHandle();
     _num_trees = num_trees;
-    _booster_params = booster_params;
 }
 
 // Delete the XGBoost handle
@@ -71,8 +69,18 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
     // create the booster and load some parameters
     XGBoosterCreate(h_train, 1, &_h_booster);
 
+    std::map<std::string, std::string> booster_params;
+    booster_params["booster"] = "gbtree";
+    booster_params["objective"] = "reg:linear";
+    booster_params["max_depth"] = "5";
+    booster_params["eta"] = "0.1";
+    booster_params["min_child_weight"] = "1";
+    booster_params["subsample"] = "0.5";
+    booster_params["colsample_bytree"] = "1";
+    booster_params["num_parallel_tree"] = "1";
+
     std::map<std::string, std::string>::iterator it;
-    for (it = _booster_params.begin(); it != _booster_params.end(); ++it) {
+    for (it = booster_params.begin(); it != booster_params.end(); ++it) {
         std::cout << it->first << ", " << it->second << '\n';
         XGBoosterSetParam(_h_booster, it->first.c_str(), it->second.c_str());
     }
@@ -114,17 +122,7 @@ int main() {
         Ys[i] = 1 + i * i * i;
     }
 
-    std::map<std::string, std::string> booster_params;
-    booster_params["booster"] = "gbtree";
-    booster_params["objective"] = "reg:linear";
-    booster_params["max_depth"] = "5";
-    booster_params["eta"] = "0.1";
-    booster_params["min_child_weight"] = "1";
-    booster_params["subsample"] = "0.5";
-    booster_params["colsample_bytree"] = "1";
-    booster_params["num_parallel_tree"] = "1";
-
-    XGBoostWrapper fitter(200, booster_params);
+    XGBoostWrapper fitter(200);
     fitter.fit(Xs, Ys, rows, cols);
 
     const unsigned int sample_rows = 5;
@@ -148,10 +146,8 @@ int main() {
 }
 
 extern "C" {
-    XGBoostWrapper* CreateBooster(
-            unsigned int num_trees,
-            std::map<std::string, std::string> booster_params) {
-        return new XGBoostWrapper(num_trees, booster_params);
+    XGBoostWrapper* CreateBooster(unsigned int num_trees) {
+        return new XGBoostWrapper(num_trees);
     }
 
     void DeleteBooster(XGBoostWrapper* pBooster) {
