@@ -39,7 +39,6 @@ class XGBoostWrapper {
 
 // Create an XGBoost handle
 XGBoostWrapper::XGBoostWrapper(unsigned int num_trees) {
-    _h_booster = BoosterHandle();
     _num_trees = num_trees;
 }
 
