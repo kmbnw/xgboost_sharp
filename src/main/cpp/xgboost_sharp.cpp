@@ -28,14 +28,19 @@
 class XGBoostWrapper {
     public:
         XGBoostWrapper(unsigned int num_trees);
+        XGBoostWrapper(std::string model_file);
         ~XGBoostWrapper();
         // xgboost expects a flat array
         void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
         void predict(const float Xs[], float* Yhats, unsigned int rows, unsigned int cols);
+        void save(std::string outfile);
+        void set_param(std::string param_name, std::string param_value);
+
     private:
         BoosterHandle _h_booster;
         // number of boosting rounds
         unsigned int _num_trees;
+        std::map<std::string, std::string> _model_params;
 };
 
 // wrap XGDMatrix for nice RAII behavior
@@ -78,6 +83,13 @@ XGDMatrixWrapper::~XGDMatrixWrapper() {
 // Create an XGBoost handle
 XGBoostWrapper::XGBoostWrapper(unsigned int num_trees) {
     _num_trees = num_trees;
+    _model_params.clear();
+}
+
+XGBoostWrapper::XGBoostWrapper(std::string model_file) {
+    _h_booster = new BoosterHandle();
+    XGBoosterCreate(0, 0, &_h_booster);
+    XGBoosterLoadModel(_h_booster, model_file.c_str());
 }
 
 // Delete the XGBoost handle
@@ -91,19 +103,9 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
     // create the booster and load some parameters
     XGBoosterCreate(train_mat.dmatrix, 1, &_h_booster);
 
-    std::map<std::string, std::string> booster_params;
-    booster_params["booster"] = "gbtree";
-    booster_params["objective"] = "reg:linear";
-    booster_params["max_depth"] = "5";
-    booster_params["eta"] = "0.1";
-    booster_params["min_child_weight"] = "1";
-    booster_params["subsample"] = "0.5";
-    booster_params["colsample_bytree"] = "1";
-    booster_params["num_parallel_tree"] = "1";
-
-    std::map<std::string, std::string>::iterator it;
-    for (it = booster_params.begin(); it != booster_params.end(); ++it) {
-        std::cout << it->first << ", " << it->second << '\n';
+    for (std::map<std::string, std::string>::iterator it = _model_params.begin();
+         it != _model_params.end();
+         ++it) {
         XGBoosterSetParam(_h_booster, it->first.c_str(), it->second.c_str());
     }
 
@@ -121,32 +123,53 @@ void XGBoostWrapper::predict(const float Xs[], float* Yhats, unsigned int rows, 
     std::memcpy(Yhats, f, sizeof(float) * out_len);
 }
 
+void XGBoostWrapper::save(std::string model_file) {
+    XGBoosterSaveModel(_h_booster, model_file.c_str());
+}
+
+void XGBoostWrapper::set_param(std::string param_name, std::string param_value) {
+    _model_params[param_name] = param_value;
+}
+
 extern "C" {
-    XGBoostWrapper* CreateBooster(unsigned int num_trees) {
+    XGBoostWrapper* CreateBooster(int num_trees) {
         return new XGBoostWrapper(num_trees);
     }
-
+    
     void DeleteBooster(XGBoostWrapper* pBooster) {
         if (pBooster) {
             delete pBooster;
         }
     }
-
+    
     void Fit(
             XGBoostWrapper* pBooster,
             const float Xs[],
             const float Ys[],
             unsigned int rows,
             unsigned int cols) {
-        return pBooster->fit(Xs, Ys, rows, cols);
+        pBooster->fit(Xs, Ys, rows, cols);
     }
 
     void Predict(
-          XGBoostWrapper* pBooster,
-          const float Xs[],
-          float* Yhats,
-          unsigned int rows,
-          unsigned int cols) {
-      return pBooster->predict(Xs, Yhats, rows, cols);
+            XGBoostWrapper* pBooster,
+            const float Xs[],
+            float* Yhats,
+            unsigned int rows,
+            unsigned int cols) {
+        pBooster->predict(Xs, Yhats, rows, cols);
+    }
+
+    
+    XGBoostWrapper* LoadModel(const char* model_file) {
+        return new XGBoostWrapper(std::string(model_file));
+    }
+    
+    void SaveModel(XGBoostWrapper* pBooster, const char* outfile) {
+        pBooster->save(std::string(outfile));
+    }
+    
+    void SetParam(XGBoostWrapper* pBooster, const char* param_name, const char* param_value) {
+        pBooster->set_param(std::string(param_name), std::string(param_value));
     }
 }
