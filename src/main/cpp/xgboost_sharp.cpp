@@ -88,14 +88,6 @@ XGBoostWrapper::~XGBoostWrapper() {
 void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols) {
     XGDMatrixWrapper train_mat(Xs, Ys, rows, cols);
 
-    // read back the labels, just a sanity check
-    /*bst_ulong bst_result;
-    const float *out_floats;
-    XGDMatrixGetFloatInfo(h_train[0], "label" , &bst_result, &out_floats);
-    for (unsigned int i=0;i<bst_result;i++)
-        std::cout << "label[" << i << "]=" << out_floats[i] << std::endl;
-    */
-
     // create the booster and load some parameters
     XGBoosterCreate(train_mat.dmatrix, 1, &_h_booster);
 
