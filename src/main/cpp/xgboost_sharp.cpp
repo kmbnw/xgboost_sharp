@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cstring>
 #include <map>
 #include "rabit/c_api.h"
 #include "xgboost/c_api.h"
@@ -37,6 +38,43 @@ class XGBoostWrapper {
         unsigned int _num_trees;
 };
 
+// wrap XGDMatrix for nice RAII behavior
+class XGDMatrixWrapper {
+    public:
+        XGDMatrixWrapper(
+                const float Xs[],
+                const float Ys[],
+                unsigned int rows,
+                unsigned int cols);
+        XGDMatrixWrapper(
+                const float Xs[],
+                unsigned int rows,
+                unsigned int cols);
+        ~XGDMatrixWrapper();
+
+        DMatrixHandle dmatrix[1];
+};
+
+XGDMatrixWrapper::XGDMatrixWrapper(
+        const float Xs[],
+        const float Ys[],
+        unsigned int rows,
+        unsigned int cols) {
+    XGDMatrixCreateFromMat((float *) Xs, rows, cols, -1, &dmatrix[0]);
+    XGDMatrixSetFloatInfo(dmatrix[0], "label", Ys, rows);
+}
+
+XGDMatrixWrapper::XGDMatrixWrapper(
+        const float Xs[],
+        unsigned int rows,
+        unsigned int cols) {
+    XGDMatrixCreateFromMat((float *) Xs, rows, cols, -1, &dmatrix[0]);
+}
+
+XGDMatrixWrapper::~XGDMatrixWrapper() {
+    XGDMatrixFree(dmatrix[0]);
+}
+
 // Create an XGBoost handle
 XGBoostWrapper::XGBoostWrapper(unsigned int num_trees) {
     _num_trees = num_trees;
@@ -44,18 +82,11 @@ XGBoostWrapper::XGBoostWrapper(unsigned int num_trees) {
 
 // Delete the XGBoost handle
 XGBoostWrapper::~XGBoostWrapper() {
-    if (_h_booster) {
-        XGBoosterFree(_h_booster);
-    }
+    XGBoosterFree(_h_booster);
 }
 
 void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols) {
-    // convert to DMatrix
-    DMatrixHandle h_train[1];
-    XGDMatrixCreateFromMat((float *) Xs, rows, cols, -1, &h_train[0]);
-
-    // load the labels
-    XGDMatrixSetFloatInfo(h_train[0], "label", Ys, rows);
+    XGDMatrixWrapper train_mat(Xs, Ys, rows, cols);
 
     // read back the labels, just a sanity check
     /*bst_ulong bst_result;
@@ -66,7 +97,7 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
     */
 
     // create the booster and load some parameters
-    XGBoosterCreate(h_train, 1, &_h_booster);
+    XGBoosterCreate(train_mat.dmatrix, 1, &_h_booster);
 
     std::map<std::string, std::string> booster_params;
     booster_params["booster"] = "gbtree";
@@ -85,30 +116,17 @@ void XGBoostWrapper::fit(const float Xs[], const float Ys[], unsigned int rows, 
     }
 
     for (unsigned int iter = 0; iter < _num_trees; iter++) {
-        XGBoosterUpdateOneIter(_h_booster, iter, h_train[0]);
+        XGBoosterUpdateOneIter(_h_booster, iter, train_mat.dmatrix[0]);
     }
-
-    // free xgboost internal structures
-    XGDMatrixFree(h_train[0]);
 }
 
 void XGBoostWrapper::predict(const float Xs[], float* Yhats, unsigned int rows, unsigned int cols) {
-    DMatrixHandle h_test;
-    XGDMatrixCreateFromMat((float *) Xs, rows, cols, -1, &h_test);
+    XGDMatrixWrapper test_mat(Xs, rows, cols);
     bst_ulong out_len;
     const float* f;
-    XGBoosterPredict(_h_booster, h_test, 0, 0, &out_len, &f);
+    XGBoosterPredict(_h_booster, test_mat.dmatrix[0], 0, 0, &out_len, &f);
 
-    for (unsigned int i = 0;i < rows; i++) {
-        Yhats[i] = f[i];
-        std::cout << "prediction[" << i << "]=" << Yhats[i] << std::endl;
-    }
-
-    // free xgboost internal structures
-    XGDMatrixFree(h_test);
-    // TODO seems as though the pointer set by XGBoosterPredict gets
-    // freed during XGDMatrixFree.  Is that the case?  If not, do
-    // we need to free() it?
+    std::memcpy(Yhats, f, sizeof(float) * out_len);
 }
 
 extern "C" {
