@@ -1,7 +1,7 @@
 # xgboost_sharp
 Unofficial C# wrapper for the awesome XGBoost library (https://github.com/dmlc/xgboost).
 
-The makefiles assume xgboost is installed on your system.  As there isn't a 'make install' for that, you can do the following to ensure it is available on Linux (for Windows, I recommend using VC++ 2015 Community edition and letting the IDE handle your paths).
+The makefiles in this project assume xgboost is installed on your system.  As there isn't a 'make install' for that, you can do the following to ensure it is available on Linux (for Windows, I recommend using VC++ 2015 Community edition and letting the IDE handle your paths).
 
 1. Clone xgboost from https://github.com/dmlc/xgboost
 2. Compile xgboost following the instructions at https://xgboost.readthedocs.io/en/latest/build.html
