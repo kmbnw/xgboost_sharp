@@ -1,12 +1,15 @@
 CC=mcs
 
+LIBDIR=../../../lib
+BINDIR=../../../bin
+
 TARGET=XGBoostSharp
 
 all: $(TARGET).exe
 
 $(TARGET).exe: $(TARGET).cs
-	cp ../cpp/libxgboost_sharp.so ./
-	$(CC)  $(TARGET).cs -out:$(TARGET).exe
+	cp $(LIBDIR)/libxgboost_sharp.so ./
+	$(CC)  $(TARGET).cs -out:$(BINDIR)/$(TARGET).exe
 
 clean:
-	$(RM) $(TARGET).exe
+	$(RM) $(BINDIR)/$(TARGET).exe

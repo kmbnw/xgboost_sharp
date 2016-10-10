@@ -6,15 +6,16 @@ CFLAGS=-g -Wall -shared -fPIC
 # by /etc/ld.so.conf.d/something*
 # Similarly for the include directory
 
+LIBDIR=../../../lib
 LIBS=-lxgboost
 
 SRC=xgboost_sharp
 TARGET=libxgboost_sharp
 
-all: $(TARGET).so
+all: $(LIBDIR)/$(TARGET).so
 
-$(TARGET).so: $(SRC).cpp
-	$(CC) $(CFLAGS) -o $(TARGET).so $(SRC).cpp $(LIBS)
+$(LIBDIR)/$(TARGET).so: $(SRC).cpp
+	$(CC) $(CFLAGS) -o $(LIBDIR)/$(TARGET).so $(SRC).cpp $(LIBS)
 
 clean:
-	$(RM) $(TARGET).so
+	$(RM) $(LIBDIR)/$(TARGET).so
