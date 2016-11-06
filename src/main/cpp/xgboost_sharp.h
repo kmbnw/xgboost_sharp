@@ -25,6 +25,8 @@ namespace xgboostsharp {
             XGBoostWrapper(unsigned int num_trees);
             XGBoostWrapper(std::string model_file);
             ~XGBoostWrapper();
+            XGBoostWrapper(const XGBoostWrapper& other) = delete;
+            XGBoostWrapper& operator=(const XGBoostWrapper& other) = delete;
             // xgboost expects a flattened array of Xs
             void fit(const float Xs[], const float Ys[], unsigned int rows, unsigned int cols);
             void predict(const float Xs[], float* Yhats, unsigned int rows, unsigned int cols);
@@ -50,6 +52,8 @@ namespace xgboostsharp {
                     const float Xs[],
                     unsigned int rows,
                     unsigned int cols);
+                XGDMatrixWrapper(const XGDMatrixWrapper& other) = delete;
+                XGDMatrixWrapper& operator=(const XGDMatrixWrapper& other) = delete;
                 ~XGDMatrixWrapper();
 
                 DMatrixHandle dmatrix[1];

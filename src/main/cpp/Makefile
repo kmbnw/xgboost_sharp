@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g -Wall -shared -fPIC
+CFLAGS=-std=c++11 -Wall -shared -fPIC
 
 # Assumes xgboost and rabit libraries are installed
 # directly to /usr/local/lib or another path specified
