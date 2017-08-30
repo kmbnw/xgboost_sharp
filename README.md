@@ -22,9 +22,10 @@ sudo cp -R rabit/include/dmlc /usr/local/include/
 
 Assuming now that /usr/local is in your library and include paths (which seems like a safe assumption) you should be able to compile and run **this** project.
 
-== Running on Windows ==
+## Running on Windows
 This *does* work on Windows, compiled with VC++ (tested on Windows 7, Windows 10, and Windows Server 2012).  I don't happen to have a Windows machine anymore, but I believe the following should get it working:
  * Change the .so to .dll in the C# wrapper
  * You may also need to remove the [return: MarshalAs(UnmanagedType.I1)] lines from the C# wrapper
  * Add **__declspec** to the C API functions
-I'm happy to accept pull requests for this.
+ 
+I'm happy to accept pull requests for adding Windows support, as long as I am able to continue having it work on Linux.
